@@ -17,7 +17,20 @@
         <div class="logo">
           <span class="logo-text">Windows&DoorsNI<span> Portal</span></span>
         </div>
-        <nav class="tab-nav">
+        <button
+          id="menu-btn"
+          class="menu-btn"
+          type="button"
+          aria-label="Toggle navigation menu"
+          aria-controls="tab-nav"
+          aria-expanded="false"
+          onclick="toggleMobileMenu()"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <nav id="tab-nav" class="tab-nav">
           <button class="tab-btn active" onclick="showPage('dashboard', this)">Dashboard</button>
           <button class="tab-btn" onclick="showPage('jobs', this)">Job List</button>
           <button class="tab-btn" onclick="showPage('stock', this)">Stock</button>
@@ -25,7 +38,7 @@
         </nav>
         <div class="header-right">
           <span id="sync-status" class="sync-status">● Synced</span>
-          <button id="theme-btn" onclick="toggleTheme()">☀️</button>
+          <button id="theme-btn" type="button" aria-label="Toggle theme" onclick="toggleTheme()">☀️</button>
         </div>
       </div>
     </header>

@@ -8,7 +8,11 @@ let stock = [];
 let map = null;
 let routeStops = [];
 
+const THEME_STORAGE_KEY = 'windowsdoorsni-theme';
+
 window.addEventListener('DOMContentLoaded', async () => {
+  applySavedTheme();
+  syncMobileMenuState();
   sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   initApp();
 });
@@ -43,6 +47,7 @@ function showPage(pageId, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(pageId).classList.add('active');
   if (btn) btn.classList.add('active');
+  closeMobileMenu();
   if (pageId === 'routes') initMap();
 }
 
@@ -433,7 +438,45 @@ function esc(str) {
 }
 
 function toggleTheme() {
-  document.body.classList.toggle('light');
-  document.getElementById('theme-btn').textContent =
-    document.body.classList.contains('light') ? '🌙' : '☀️';
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem(THEME_STORAGE_KEY, isLight ? 'light' : 'dark');
+  updateThemeButton(isLight);
 }
+
+function applySavedTheme() {
+  const isLight = localStorage.getItem(THEME_STORAGE_KEY) === 'light';
+  document.body.classList.toggle('light', isLight);
+  updateThemeButton(isLight);
+}
+
+function updateThemeButton(isLight) {
+  const themeButton = document.getElementById('theme-btn');
+  themeButton.textContent = isLight ? '🌙' : '☀️';
+  themeButton.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+}
+
+function toggleMobileMenu() {
+  document.body.classList.toggle('menu-open');
+  syncMobileMenuState();
+}
+
+function closeMobileMenu() {
+  if (window.innerWidth <= 860) {
+    document.body.classList.remove('menu-open');
+    syncMobileMenuState();
+  }
+}
+
+function syncMobileMenuState() {
+  const menuButton = document.getElementById('menu-btn');
+  if (!menuButton) return;
+  const expanded = document.body.classList.contains('menu-open');
+  menuButton.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+}
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 860) {
+    document.body.classList.remove('menu-open');
+    syncMobileMenuState();
+  }
+});
