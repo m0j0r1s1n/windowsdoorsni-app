@@ -1,0 +1,12 @@
+{
+  "name": "windowsdoorsni-app",
+  "private": true,
+  "scripts": {
+    "build": "mkdir -p dist && cp index.html style.css app.js dist/",
+    "deploy": "npm run build && wrangler deploy",
+    "dev": "npm run build && wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^4.79.0"
+  }
+}
