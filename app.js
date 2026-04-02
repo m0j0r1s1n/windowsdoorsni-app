@@ -7,6 +7,7 @@ let jobs = [];
 let stock = [];
 let map = null;
 let routeStops = [];
+let editingJobId = null;
 
 const THEME_STORAGE_KEY = 'windowsdoorsni-theme';
 
@@ -41,6 +42,42 @@ function startAutoRefresh() {
   }, 15000);
 }
 
+function normalizeStatus(status) {
+  return String(status || '').trim().toLowerCase();
+}
+
+function getStatusClassName(status) {
+  return normalizeStatus(status).replace(/[^a-z0-9]+/g, '-');
+}
+
+function setJobFormMode(isEditing) {
+  const title = document.getElementById('job-form-title');
+  const submit = document.getElementById('job-submit-btn');
+  const cancel = document.getElementById('job-cancel-btn');
+
+  if (!title || !submit || !cancel) return;
+
+  title.textContent = isEditing ? 'Edit Job' : 'Add New Job';
+  submit.textContent = isEditing ? 'Save Changes' : 'Add Job';
+  cancel.hidden = !isEditing;
+}
+
+function resetJobForm() {
+  const form = document.getElementById('job-form');
+  editingJobId = null;
+  if (form) form.reset();
+  setJobFormMode(false);
+}
+
+function populateJobForm(job) {
+  document.getElementById('job-customer').value = job.customer || '';
+  document.getElementById('job-address').value = job.address || '';
+  document.getElementById('job-type').value = job.type || 'Window';
+  document.getElementById('job-price').value = job.price ?? '';
+  document.getElementById('job-status').value = job.status || 'Pending';
+  document.getElementById('job-date').value = job.date || '';
+}
+
 // Tab Navigation
 function showPage(pageId, btn) {
   document.querySelectorAll('.tab-content').forEach(p => p.classList.remove('active'));
@@ -59,21 +96,98 @@ function initMap() {
   }
 }
 
+function getTodayIsoDate() {
+  const now = new Date();
+  const offsetNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return offsetNow.toISOString().slice(0, 10);
+}
+
+function formatScheduleDate(dateStr) {
+  const date = new Date(`${dateStr}T12:00:00`);
+  return new Intl.DateTimeFormat('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short'
+  }).format(date);
+}
+
+function getScheduleDayLabel(dateStr) {
+  const today = new Date(`${getTodayIsoDate()}T00:00:00`);
+  const bookingDay = new Date(`${dateStr}T00:00:00`);
+  const diffDays = Math.round((bookingDay - today) / 86400000);
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Tomorrow';
+  if (diffDays > 1 && diffDays < 7) return `In ${diffDays} days`;
+  return formatScheduleDate(dateStr);
+}
+
+function renderUpcomingSchedule() {
+  const wrap = document.getElementById('schedule-list');
+  if (!wrap) return;
+
+  const activeStatuses = ['pending', 'booked', 'deposit paid'];
+  const upcomingJobs = jobs
+    .filter(job => job.date && job.date >= getTodayIsoDate() && activeStatuses.includes(normalizeStatus(job.status)))
+    .sort((a, b) => a.date.localeCompare(b.date) || String(a.customer || '').localeCompare(String(b.customer || '')))
+    .slice(0, 8);
+
+  if (!upcomingJobs.length) {
+    wrap.innerHTML = '<p class="empty-state">No upcoming bookings with a scheduled date yet.</p>';
+    return;
+  }
+
+  wrap.innerHTML = `<div class="schedule-list">
+    ${upcomingJobs.map(job => `
+      <article class="schedule-item">
+        <div class="schedule-date-pill">
+          <span class="schedule-date-day">${esc(getScheduleDayLabel(job.date))}</span>
+          <span class="schedule-date-full">${esc(formatScheduleDate(job.date))}</span>
+        </div>
+        <div class="schedule-body">
+          <div class="schedule-main-row">
+            <h3 class="schedule-customer">${esc(job.customer)}</h3>
+            <span class="badge badge-${getStatusClassName(job.status)}">${esc(job.status)}</span>
+          </div>
+          <div class="schedule-address">${esc(job.address)}</div>
+          <div class="schedule-meta">
+            <span>${esc(job.type || 'Job')}</span>
+            <span>£${(job.price || 0).toFixed(2)}</span>
+          </div>
+        </div>
+      </article>`).join('')}
+  </div>`;
+}
+
 // ── DASHBOARD ──
 function renderDashboard() {
-  const revenue  = jobs.filter(j => j.status === 'Paid').reduce((s, j) => s + (j.price || 0), 0);
-  const pending  = jobs.filter(j => j.status === 'Pending').length;
-  const complete = jobs.filter(j => j.status === 'Complete' || j.status === 'Paid').length;
+  const totalValue = jobs.reduce((sum, job) => sum + (job.price || 0), 0);
+  const depositPaid = jobs
+    .filter(j => normalizeStatus(j.status) === 'deposit paid')
+    .reduce((sum, job) => sum + (job.price || 0), 0);
+  const finalPaid = jobs
+    .filter(j => normalizeStatus(j.status) === 'paid')
+    .reduce((sum, job) => sum + (job.price || 0), 0);
+  const pending  = jobs.filter(j => ['pending', 'booked', 'deposit paid'].includes(normalizeStatus(j.status))).length;
+  const complete = jobs.filter(j => ['complete', 'paid'].includes(normalizeStatus(j.status))).length;
   const lowStock = stock.filter(s => s.qty <= s.min).length;
 
   document.getElementById('kpi-row').innerHTML = `
     <div class="kpi">
-      <div class="kpi-label">Revenue</div>
-      <div class="kpi-value">£${revenue.toFixed(0)}</div>
+      <div class="kpi-label">Total Job Value</div>
+      <div class="kpi-value">£${totalValue.toFixed(0)}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Pending Jobs</div>
       <div class="kpi-value" style="color:var(--cyan)">${pending}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Deposit Paid</div>
+      <div class="kpi-value" style="color:#f59e0b">£${depositPaid.toFixed(0)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Final Paid</div>
+      <div class="kpi-value" style="color:var(--green)">£${finalPaid.toFixed(0)}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Completed</div>
@@ -84,6 +198,8 @@ function renderDashboard() {
       <div class="kpi-value" style="color:${lowStock > 0 ? 'var(--red)' : 'var(--green)'}">${lowStock}</div>
     </div>
   `;
+
+  renderUpcomingSchedule();
 }
 
 async function quickAddJob(e) {
@@ -116,15 +232,32 @@ async function addJob(e) {
     status:   document.getElementById('job-status').value,
     date:     document.getElementById('job-date').value || null,
   };
-  const { error } = await sbClient.from('jobs').insert([job]);
+  const query = editingJobId
+    ? sbClient.from('jobs').update(job).eq('id', editingJobId)
+    : sbClient.from('jobs').insert([job]);
+  const { error } = await query;
   if (!error) {
-    e.target.reset();
+    resetJobForm();
     await loadData();
     renderJobs();
     renderDashboard();
   } else {
     alert('Error: ' + error.message);
   }
+}
+
+function editJob(id) {
+  const job = jobs.find(entry => String(entry.id) === String(id));
+  if (!job) {
+    alert('Job not found. Refresh and try again.');
+    return;
+  }
+
+  editingJobId = id;
+  populateJobForm(job);
+  setJobFormMode(true);
+  showPage('jobs', document.querySelector('.tab-btn:nth-child(2)'));
+  document.getElementById('job-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function renderJobs() {
@@ -146,9 +279,14 @@ function renderJobs() {
               <td>${esc(j.address)}</td>
               <td>${esc(j.type)}</td>
               <td>£${(j.price || 0).toFixed(2)}</td>
-              <td><span class="badge badge-${(j.status || '').toLowerCase()}">${esc(j.status)}</span></td>
+              <td><span class="badge badge-${getStatusClassName(j.status)}">${esc(j.status)}</span></td>
               <td>${esc(j.date)}</td>
-              <td><button class="row-delete" onclick="deleteJob('${j.id}')" title="Delete">✕</button></td>
+              <td>
+                <div class="row-actions">
+                  <button class="row-action row-edit" onclick="editJob('${j.id}')" title="Edit">Edit</button>
+                  <button class="row-delete" onclick="deleteJob('${j.id}')" title="Delete">Delete</button>
+                </div>
+              </td>
             </tr>`).join('')}
         </tbody>
       </table>
@@ -159,6 +297,9 @@ async function deleteJob(id) {
   if (!confirm('Delete this job?')) return;
   const { error } = await sbClient.from('jobs').delete().eq('id', id);
   if (!error) {
+    if (String(editingJobId) === String(id)) {
+      resetJobForm();
+    }
     await loadData();
     renderJobs();
     renderDashboard();
@@ -480,3 +621,6 @@ window.addEventListener('resize', () => {
     syncMobileMenuState();
   }
 });
+
+window.editJob = editJob;
+window.resetJobForm = resetJobForm;

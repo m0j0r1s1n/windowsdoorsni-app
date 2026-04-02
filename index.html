@@ -68,6 +68,7 @@
                 <select id="q-status">
                   <option>Pending</option>
                   <option>Booked</option>
+                  <option>Deposit Paid</option>
                   <option>Complete</option>
                   <option>Paid</option>
                 </select>
@@ -76,12 +77,21 @@
             <button type="submit" class="btn-primary">Add Job</button>
           </form>
         </div>
+        <div class="form-card schedule-card">
+          <div class="schedule-header">
+            <div>
+              <h2 class="form-title">Upcoming Bookings</h2>
+              <p class="schedule-subtitle">Your next scheduled jobs appear here automatically.</p>
+            </div>
+          </div>
+          <div id="schedule-list"><p class="empty-state">No upcoming bookings with a scheduled date yet.</p></div>
+        </div>
       </section>
 
       <section id="jobs" class="tab-content">
         <div class="section-header"><h1>Job List</h1></div>
         <div class="form-card">
-          <h2 class="form-title">Add New Job</h2>
+          <h2 id="job-form-title" class="form-title">Add New Job</h2>
           <form id="job-form" onsubmit="addJob(event)">
             <div class="form-grid">
               <div class="form-group">
@@ -109,6 +119,7 @@
                 <select id="job-status">
                   <option>Pending</option>
                   <option>Booked</option>
+                  <option>Deposit Paid</option>
                   <option>Complete</option>
                   <option>Paid</option>
                 </select>
@@ -118,7 +129,10 @@
                 <input type="date" id="job-date" />
               </div>
             </div>
-            <button type="submit" class="btn-primary">Add Job</button>
+            <div class="form-actions">
+              <button id="job-submit-btn" type="submit" class="btn-primary">Add Job</button>
+              <button id="job-cancel-btn" type="button" class="btn-secondary" onclick="resetJobForm()" hidden>Cancel Edit</button>
+            </div>
           </form>
         </div>
         <div id="jobs-table-wrap"></div>

@@ -174,6 +174,17 @@ main { padding: 0 2rem 3rem; max-width: 1400px; margin: 0 auto; }
   font-weight: 700; font-size: 1rem; text-transform: uppercase;
   letter-spacing: 0.06em; color: var(--cyan); margin: 0 0 1.1rem;
 }
+.schedule-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.schedule-subtitle {
+  margin: -0.4rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
 .form-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 0.9rem; margin-bottom: 1.1rem;
@@ -206,6 +217,12 @@ main { padding: 0 2rem 3rem; max-width: 1400px; margin: 0 auto; }
 }
 .btn-primary:hover { opacity: 0.82; }
 
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 /* ── DATA TABLES ── */
 .data-table-wrap {
   margin-top: 1.25rem; overflow-x: auto;
@@ -223,12 +240,108 @@ main { padding: 0 2rem 3rem; max-width: 1400px; margin: 0 auto; }
 }
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tr:hover td { background: var(--bg-elevated); }
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.row-action {
+  background: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
+}
+.row-edit:hover {
+  color: var(--cyan);
+  border-color: var(--cyan);
+  background: var(--cyan-dim);
+}
 .row-delete {
   background: none; border: none; cursor: pointer;
   color: var(--text-secondary); font-size: 0.85rem; padding: 0.2rem 0.4rem;
   border-radius: 4px; transition: color var(--transition), background var(--transition);
 }
 .row-delete:hover { color: var(--red); background: rgba(239,68,68,.1); }
+
+.schedule-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.schedule-item {
+  display: grid;
+  grid-template-columns: minmax(120px, 150px) 1fr;
+  gap: 1rem;
+  align-items: start;
+  padding: 1rem;
+  background: linear-gradient(135deg, var(--bg-elevated), rgba(0, 0, 0, 0));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.schedule-date-pill {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  background: var(--cyan-dim);
+  border: 1px solid var(--border);
+}
+
+.schedule-date-day {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.schedule-date-full {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.schedule-body {
+  min-width: 0;
+}
+
+.schedule-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.schedule-customer {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.schedule-address {
+  margin-top: 0.45rem;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+}
+
+.schedule-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.65rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
 
 /* ── BADGES ── */
 .badge {
@@ -237,6 +350,7 @@ main { padding: 0 2rem 3rem; max-width: 1400px; margin: 0 auto; }
 }
 .badge-pending  { background: rgba(139,154,181,.15); color: var(--text-secondary); }
 .badge-booked   { background: rgba(0,212,232,.15);   color: var(--cyan); }
+.badge-deposit-paid { background: rgba(245,158,11,.18); color: #f59e0b; }
 .badge-complete { background: rgba(34,197,94,.15);   color: var(--green); }
 .badge-paid     { background: rgba(34,197,94,.25);   color: var(--green); }
 .badge-ok       { background: rgba(34,197,94,.15);   color: var(--green); }
@@ -373,9 +487,23 @@ main { padding: 0 2rem 3rem; max-width: 1400px; margin: 0 auto; }
     grid-template-columns: 1fr;
   }
 
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .route-summary {
     flex-direction: column;
     gap: 0.75rem;
+  }
+
+  .schedule-item {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-main-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   #map-container {
